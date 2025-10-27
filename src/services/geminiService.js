@@ -6,7 +6,7 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
 const model = genAI.getGenerativeModel({ model: "gemini-pro" }); // Sử dụng gemini-pro cho text
 
-const getGeminiResponse = async (message, chatHistory = [], topic = null) => {
+const getGeminiResponse = async (message, chatHistory = [], topic = null, userInfo = null) => {
   const chat = model.startChat({
     history: chatHistory.map(entry => ({
       role: entry.sender === 'user' ? 'user' : 'model',
@@ -19,6 +19,15 @@ const getGeminiResponse = async (message, chatHistory = [], topic = null) => {
 
   // Check if this is an auto-prompt message
   const isAutoPrompt = message.includes('[AUTO_PROMPT]');
+
+  // Create user-specific context
+  const userContext = userInfo ? `
+STUDENT INFORMATION:
+- Name: ${userInfo.name}
+- Age: ${userInfo.age} years old
+- Gender: ${userInfo.gender}
+
+IMPORTANT: Always address the student by their name (${userInfo.name}) when appropriate. Use age-appropriate language and examples for a ${userInfo.age}-year-old ${userInfo.gender}.` : '';
 
   // Create topic-specific context
   const topicContext = topic ? `
@@ -49,7 +58,7 @@ Examples of re-engagement:
 - "Let's try something different! Can you count from 1 to 5?"
 - "I'm here waiting for you! Let's learn something new together!"
 
-Always respond in English and be very encouraging.${topicContext}
+Always respond in English and be very encouraging.${userContext}${topicContext}
   
   Student: ${message}
   Teacher:`
@@ -81,7 +90,7 @@ Respond kindly and patiently, like a caring teacher.
 End your replies with a short question or activity to keep the child thinking or replying.
 Assume that the child has limited English ability and needs encouragement.
 Avoid using difficult or abstract terms.
-Always respond in English.${topicContext}
+Always respond in English.${userContext}${topicContext}
   
   Student: ${message}
   Teacher:`;
