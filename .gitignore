@@ -1,0 +1,11 @@
+.env
+.vercel
+node_modules
+.env.backup
+# Ignore env files
+.env*
+*.env
+
+# Ignore env files
+.env*
+*.env
