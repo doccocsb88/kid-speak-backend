@@ -5,3 +5,7 @@ node_modules
 # Ignore env files
 .env*
 *.env
+
+# Ignore env files
+.env*
+*.env
