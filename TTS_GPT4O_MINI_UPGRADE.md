@@ -155,7 +155,6 @@ Body: {
   "options": {
     "speaking_rate": "slow",
     "pause_ms_between_sentences": 500,
-    "age_gate": 6
   },
   "engagementLevel": "WARM_UP",
   "style": "soft-friendly"

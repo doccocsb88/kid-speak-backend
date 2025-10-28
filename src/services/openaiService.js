@@ -29,7 +29,6 @@ const OPTIONS_DEFAULT = {
   correction_mode: 'explicit', // 'implicit' | 'explicit' | 'sandwich'
   difficulty: 'auto', // 'auto' | 'starters' | 'movers' | 'flyers'
   focus: ['vocabulary', 'pronunciation'],
-  target_vocab: [],
   min_examples_per_point: 1,
 
   // Language shaping
@@ -46,13 +45,11 @@ const OPTIONS_DEFAULT = {
 
   // Flow & topic control
   topic_strictness: 'normal', // 'loose' | 'normal' | 'strict'
-  open_question_ratio: 0.3, // 0..1
   wrap_up_on_turns: 14,
 
   // Safety & content
   banned_topics: [],
   profanity_filter: true,
-  age_gate: 6,
 
   // Model params
   temperature_base: 0.6,
@@ -88,7 +85,6 @@ const sanitizeOptions = (raw) => {
   if (raw.correction_mode) out.correction_mode = pickEnum('correction_mode', raw.correction_mode);
   if (raw.difficulty) out.difficulty = pickEnum('difficulty', raw.difficulty);
   if (Array.isArray(raw.focus)) out.focus = raw.focus.filter((f) => ENUMS.focus.includes(f));
-  if (Array.isArray(raw.target_vocab)) out.target_vocab = raw.target_vocab.map(String).slice(0, 64);
   if (Number.isFinite(raw.min_examples_per_point)) out.min_examples_per_point = clamp(raw.min_examples_per_point, 0, 10);
 
   if (Number.isFinite(raw.max_sentence_words)) out.max_sentence_words = clamp(raw.max_sentence_words, 4, 20);
@@ -101,12 +97,10 @@ const sanitizeOptions = (raw) => {
   if (Number.isFinite(raw.reengage_after_seconds)) out.reengage_after_seconds = clamp(raw.reengage_after_seconds, 10, 180);
 
   if (raw.topic_strictness) out.topic_strictness = pickEnum('topic_strictness', raw.topic_strictness) || 'normal';
-  if (Number.isFinite(raw.open_question_ratio)) out.open_question_ratio = clamp(raw.open_question_ratio, 0, 1);
   if (Number.isInteger(raw.wrap_up_on_turns)) out.wrap_up_on_turns = clamp(raw.wrap_up_on_turns, 5, 40);
 
   if (Array.isArray(raw.banned_topics)) out.banned_topics = raw.banned_topics.map(String).slice(0, 32);
   if (typeof raw.profanity_filter === 'boolean') out.profanity_filter = raw.profanity_filter;
-  if (Number.isFinite(raw.age_gate)) out.age_gate = clamp(raw.age_gate, 4, 12);
 
   if (Number.isFinite(raw.temperature_base)) out.temperature_base = clamp(raw.temperature_base, 0, 2);
   if (Number.isFinite(raw.frequency_penalty)) out.frequency_penalty = clamp(raw.frequency_penalty, -2, 2);
@@ -205,8 +199,8 @@ Focus: Learn about pets, farm animals, and wild animals. Talk about animal sound
   colors: `TOPIC: Colors
 Focus: Discover all the beautiful colors around us. Practice identifying colors of objects, mixing colors, and describing things by their colors.`,
 
-dailyActivities: `TOPIC: Daily Activities
-Focus: daily routine verbs and time words; sequencing.`,
+'daily-activities': `TOPIC: Daily Activities
+Focus: Talk about what you do every day from morning to night. Learn about daily routines, time expressions, and everyday activities like eating, playing, and sleeping.`,
 
   family: `TOPIC: Family
 Focus: Meet your family members and relatives. Talk about family relationships, family activities, and introduce family members.`,
@@ -301,7 +295,6 @@ const buildConditionalConstraints = (opts) => {
   if (opts.banned_topics.length > 0) lines.push(`Avoid these topics entirely: ${opts.banned_topics.join(', ')}.`);
 
   lines.push(`Keep each reply ≤ ${opts.max_sentences_per_turn} sentence(s), each sentence ≤ ${opts.max_sentence_words} words.`);
-  lines.push(`Mix open questions (${Math.round(opts.open_question_ratio * 100)}%) with short activities.`);
   lines.push(`Aim to wrap up around turn ${opts.wrap_up_on_turns} with a brief summary and exit task.`);
 
   return lines.join('\n');
