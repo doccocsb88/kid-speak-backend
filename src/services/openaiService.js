@@ -31,12 +31,10 @@ const OPTIONS_DEFAULT = {
   focus: ['vocabulary', 'pronunciation'],
   target_vocab: [],
   min_examples_per_point: 1,
-  scaffold_level: 1, // 0..3
 
   // Language shaping
   max_sentence_words: 10,
   max_sentences_per_turn: 2,
-  emoji_usage: 'light', // 'off' | 'light' | 'medium'
   bilingual_support: 'off', // 'off' | 'keyword_gloss' | 'brief_hint'
   ipa_pronunciation: false,
   phonics_hints: false,
@@ -44,10 +42,7 @@ const OPTIONS_DEFAULT = {
   // Engagement & game mechanics
   anti_loop: true,
   reengage_after_seconds: 30,
-  reengage_style: 'playful', // 'playful' | 'calm' | 'quiz'
-  activity_preference: ['repeat_after_me', 'AB_choice', 'fill_blank'],
-  praise_frequency: 'normal', // 'low' | 'normal' | 'high'
-  challenge_ratio: 0.4,
+  // Removed: reengage_style, activity_preference, praise_frequency, challenge_ratio
 
   // Flow & topic control
   topic_strictness: 'normal', // 'loose' | 'normal' | 'strict'
@@ -65,8 +60,7 @@ const OPTIONS_DEFAULT = {
   presence_penalty: 0.2,
 
   // Voice (TTS wrappers use these)
-  voice_policy: 'per_level', // or 'fixed'
-  voice_fixed: 'sparkle',
+  voice_fixed: 'alloy',
   speaking_rate: 'slow',
   pause_ms_between_sentences: 300,
 };
@@ -76,9 +70,7 @@ const ENUMS = {
   correction_mode: ['implicit', 'explicit', 'sandwich'],
   difficulty: ['auto', 'starters', 'movers', 'flyers'],
   focus: ['vocabulary', 'pronunciation', 'grammar', 'listening', 'speaking'],
-  emoji_usage: ['off', 'light', 'medium'],
   bilingual_support: ['off', 'keyword_gloss', 'brief_hint'],
-  voice_policy: ['per_level', 'fixed'],
   speaking_rate: ['slow', 'normal', 'fast'],
 };
 // const VALID_VOICES = ['sparkle', 'breeze', 'meadow', 'ember', 'wave'];
@@ -98,19 +90,15 @@ const sanitizeOptions = (raw) => {
   if (Array.isArray(raw.focus)) out.focus = raw.focus.filter((f) => ENUMS.focus.includes(f));
   if (Array.isArray(raw.target_vocab)) out.target_vocab = raw.target_vocab.map(String).slice(0, 64);
   if (Number.isFinite(raw.min_examples_per_point)) out.min_examples_per_point = clamp(raw.min_examples_per_point, 0, 10);
-  if (Number.isInteger(raw.scaffold_level)) out.scaffold_level = clamp(raw.scaffold_level, 0, 3);
 
   if (Number.isFinite(raw.max_sentence_words)) out.max_sentence_words = clamp(raw.max_sentence_words, 4, 20);
   if (Number.isFinite(raw.max_sentences_per_turn)) out.max_sentences_per_turn = clamp(raw.max_sentences_per_turn, 1, 4);
-  if (raw.emoji_usage) out.emoji_usage = pickEnum('emoji_usage', raw.emoji_usage);
   if (raw.bilingual_support) out.bilingual_support = pickEnum('bilingual_support', raw.bilingual_support);
   if (typeof raw.ipa_pronunciation === 'boolean') out.ipa_pronunciation = raw.ipa_pronunciation;
   if (typeof raw.phonics_hints === 'boolean') out.phonics_hints = raw.phonics_hints;
 
   if (typeof raw.anti_loop === 'boolean') out.anti_loop = raw.anti_loop;
   if (Number.isFinite(raw.reengage_after_seconds)) out.reengage_after_seconds = clamp(raw.reengage_after_seconds, 10, 180);
-  if (raw.reengage_style) out.reengage_style = raw.reengage_style;
-  if (Array.isArray(raw.activity_preference)) out.activity_preference = raw.activity_preference.slice(0, 8);
 
   if (raw.topic_strictness) out.topic_strictness = pickEnum('topic_strictness', raw.topic_strictness) || 'normal';
   if (Number.isFinite(raw.open_question_ratio)) out.open_question_ratio = clamp(raw.open_question_ratio, 0, 1);
@@ -124,7 +112,6 @@ const sanitizeOptions = (raw) => {
   if (Number.isFinite(raw.frequency_penalty)) out.frequency_penalty = clamp(raw.frequency_penalty, -2, 2);
   if (Number.isFinite(raw.presence_penalty)) out.presence_penalty = clamp(raw.presence_penalty, -2, 2);
 
-  if (raw.voice_policy) out.voice_policy = pickEnum('voice_policy', raw.voice_policy);
   if (raw.voice_fixed && VALID_VOICES.includes(raw.voice_fixed)) out.voice_fixed = raw.voice_fixed;
   if (raw.speaking_rate) out.speaking_rate = pickEnum('speaking_rate', raw.speaking_rate);
   if (Number.isFinite(raw.pause_ms_between_sentences)) out.pause_ms_between_sentences = clamp(raw.pause_ms_between_sentences, 100, 1000);
@@ -210,40 +197,48 @@ const LEVEL_INSTRUCTIONS = '';// (kept inside CORE_RULES to avoid duplication)
 
 const TOPIC_PROMPTS = {
   'general-speaking': `TOPIC: General Speaking
-Focus: polite expressions, greetings, simple social interactions.`,
+Focus: Practice everyday conversations and general speaking skills. Focus on polite expressions, greetings, and basic social interactions.`,
 
   animals: `TOPIC: Animals
-Focus: names, actions, habitats; describe with 1–2 adjectives.`,
+Focus: Learn about pets, farm animals, and wild animals. Talk about animal sounds, habitats, and characteristics. Use fun animal activities and games.`,
 
   colors: `TOPIC: Colors
-Focus: identify colors and shades; compare/contrast two objects.`,
+Focus: Discover all the beautiful colors around us. Practice identifying colors of objects, mixing colors, and describing things by their colors.`,
 
 dailyActivities: `TOPIC: Daily Activities
 Focus: daily routine verbs and time words; sequencing.`,
 
   family: `TOPIC: Family
-Focus: family members, relationships; possessives (my/your).`,
+Focus: Meet your family members and relatives. Talk about family relationships, family activities, and introduce family members.`,
 
   food: `TOPIC: Food
-Focus: likes/dislikes; basic countable vs uncountable usage.`,
+Focus: Explore delicious foods and drinks. Discuss favorite foods, healthy eating, meal times, and food preferences.`,
 
   numbers: `TOPIC: Numbers
-Focus: count to 20; simple add/subtract in words.`,
+Focus: Count from 1 to 20 and learn basic math. Practice counting, simple addition, and number recognition through games and activities.`,
 
   body: `TOPIC: Body Parts
-Focus: name parts and pair with actions; simple commands.`,
+Focus: Learn about your body and how to take care of it. Identify body parts, discuss body functions, and learn about hygiene and health.`,
 
   clothes: `TOPIC: Clothes
-Focus: clothing ↔ weather matching; this/that/these/those basics.`,
+Focus: Dress up and learn about different clothes. Talk about what to wear for different occasions, weather, and personal style.`,
 
   weather: `TOPIC: Weather
-Focus: weather words; suitable activities and feelings.`,
+Focus: Talk about sunny, rainy, and snowy days. Describe weather conditions, seasons, and appropriate activities for different weather.`,
 
   school: `TOPIC: School
-Focus: classroom objects; polite requests and offers.`,
+Focus: Learn about school, teachers, and friends. Discuss school activities, subjects, classroom objects, and school life.`,
 
   toys: `TOPIC: Toys
-Focus: describe toys and actions; sharing language.`,
+Focus: Play with your favorite toys and games. Talk about favorite toys, how to play with them, and sharing toys with friends.`,
+  history: `TOPIC: History
+Focus: Travel back in time to learn about important people and events. Explore simple timelines, inventions, and how life used to be.`,
+
+  geography: `TOPIC: Geography
+Focus: countries, maps, and landforms; continents and oceans; compare places.`,
+
+  science: `TOPIC: Science
+Focus: experiments, energy, and living things; simple discoveries; how things work.`,
 };
 
 
@@ -281,7 +276,7 @@ const buildSessionStateBlock = (chatHistory = []) => {
 const renderOptionDirectives = (opts) => [
   `Education level: ${opts.difficulty}. Focus: ${opts.focus.join(', ')}`,
   `Correction mode: ${opts.correction_mode}; Repeat policy: ${opts.force_repeat}`,
-  `Emoji usage: ${opts.emoji_usage}; Bilingual: ${opts.bilingual_support}; IPA: ${opts.ipa_pronunciation ? 'on' : 'off'}; Phonics: ${opts.phonics_hints ? 'on' : 'off'}`,
+  `Bilingual: ${opts.bilingual_support}; IPA: ${opts.ipa_pronunciation ? 'on' : 'off'}; Phonics: ${opts.phonics_hints ? 'on' : 'off'}`,
   `Topic strictness: ${opts.topic_strictness}`,
   'Violations not allowed.',
 ].join('\n');
@@ -292,10 +287,6 @@ const buildConditionalConstraints = (opts) => {
   if (opts.force_repeat === 'off') lines.push('Do not force the student to repeat after corrections.');
   if (opts.force_repeat === 'soft') lines.push('After a correction, encourage a repeat once, but do not insist.');
   if (opts.force_repeat === 'strict') lines.push('After any correction, always ask the student to repeat exactly once.');
-
-  if (opts.emoji_usage === 'off') lines.push('Do not use emojis.');
-  if (opts.emoji_usage === 'light') lines.push('Use at most one emoji per reply.');
-  if (opts.emoji_usage === 'medium') lines.push('Use up to two emojis per reply.');
 
   if (opts.bilingual_support === 'keyword_gloss') lines.push('After new words, add a one-word Vietnamese gloss in parentheses.');
   if (opts.bilingual_support === 'brief_hint') lines.push('Add one brief Vietnamese hint when necessary. Keep English first.');
@@ -310,7 +301,7 @@ const buildConditionalConstraints = (opts) => {
   if (opts.banned_topics.length > 0) lines.push(`Avoid these topics entirely: ${opts.banned_topics.join(', ')}.`);
 
   lines.push(`Keep each reply ≤ ${opts.max_sentences_per_turn} sentence(s), each sentence ≤ ${opts.max_sentence_words} words.`);
-  lines.push(`Mix open questions (${Math.round(opts.open_question_ratio * 100)}%) with activities: ${opts.activity_preference.join(', ')}.`);
+  lines.push(`Mix open questions (${Math.round(opts.open_question_ratio * 100)}%) with short activities.`);
   lines.push(`Aim to wrap up around turn ${opts.wrap_up_on_turns} with a brief summary and exit task.`);
 
   return lines.join('\n');
@@ -381,7 +372,8 @@ const ENGAGEMENT_LEVEL = {
 };
 
 const pickVoiceForLevel = (level, opts) => {
-  if (opts.voice_policy === 'fixed') return { voice: opts.voice_fixed, style: 'default' };
+  // If a fixed voice is explicitly provided, use it; otherwise choose per engagement level
+  if (opts.voice_fixed) return { voice: opts.voice_fixed, style: 'default' };
   switch (level) {
     case ENGAGEMENT_LEVEL.WARM_UP: return { voice: 'shimmer', style: 'soft-friendly' };
     case ENGAGEMENT_LEVEL.CORE: return { voice: 'alloy', style: 'clear-slow' };
@@ -400,7 +392,8 @@ const estimateEngagementLevel = (chatHistory = [], opts) => {
   if (wasChallenge) return ENGAGEMENT_LEVEL.CORE;
   const idleReengage = false; // gate from caller if needed
   if (idleReengage) return ENGAGEMENT_LEVEL.REENGAGE;
-  return Math.random() < opts.challenge_ratio ? ENGAGEMENT_LEVEL.CHALLENGE : ENGAGEMENT_LEVEL.CORE;
+  const challengeRatio = 0.4; // fixed ratio; previously user-configurable
+  return Math.random() < challengeRatio ? ENGAGEMENT_LEVEL.CHALLENGE : ENGAGEMENT_LEVEL.CORE;
 };
 
 // Keep a short anti-loop header for reuse in tests / exports parity

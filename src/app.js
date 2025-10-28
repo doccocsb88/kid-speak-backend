@@ -18,9 +18,6 @@ const corsOptions = {
     const allowedOrigins = [
       'http://localhost:3000',  // Local development
       'http://127.0.0.1:3000',  // Alternative local development
-      'https://kid-speak-frontend.vercel.app',  // Production frontend (if deployed)
-      'https://kid-speak.vercel.app',  // Alternative production frontend
-      'https://kid-speak-fontend-lrzqgpm64-vu-van-hais-projects.vercel.app',  // Current deployed frontend
       // Add your frontend domain here when deployed
     ];
     
@@ -29,9 +26,6 @@ const corsOptions = {
     } else {
       // For development, allow any localhost origin
       if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-        callback(null, true);
-      } else if (origin.includes('vercel.app')) {
-        // Allow any Vercel deployment for flexibility
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
