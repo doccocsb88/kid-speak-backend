@@ -16,7 +16,6 @@ const testCases = [
       conversationOptions: {
         speaking_rate: 'slow',
         pause_ms_between_sentences: 500,
-        age_gate: 6,
         phonics_hints: true,
         ipa_pronunciation: false,
         reengage_style: 'playful'
@@ -33,7 +32,6 @@ const testCases = [
       conversationOptions: {
         speaking_rate: 'normal',
         pause_ms_between_sentences: 300,
-        age_gate: 8,
         reengage_style: 'playful'
       },
       engagementLevel: 'REENGAGE',
@@ -48,7 +46,6 @@ const testCases = [
       conversationOptions: {
         speaking_rate: 'fast',
         pause_ms_between_sentences: 200,
-        age_gate: 10,
       },
       engagementLevel: 'CHALLENGE',
       style: 'energetic'
@@ -62,7 +59,6 @@ const testCases = [
       conversationOptions: {
         speaking_rate: 'normal',
         pause_ms_between_sentences: 400,
-        age_gate: 7,
       },
       engagementLevel: 'WRAP_UP',
       style: 'warm-summary'
