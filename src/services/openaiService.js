@@ -29,7 +29,6 @@ const OPTIONS_DEFAULT = {
   correction_mode: 'explicit', // 'implicit' | 'explicit' | 'sandwich'
   difficulty: 'auto', // 'auto' | 'starters' | 'movers' | 'flyers'
   focus: ['vocabulary', 'pronunciation'],
-  min_examples_per_point: 1,
 
   // Language shaping
   max_sentence_words: 10,
@@ -40,12 +39,11 @@ const OPTIONS_DEFAULT = {
 
   // Engagement & game mechanics
   anti_loop: true,
-  reengage_after_seconds: 30,
-  // Removed: reengage_style, activity_preference, praise_frequency, challenge_ratio
+  // Removed: reengage_after_seconds, reengage_style, activity_preference, praise_frequency, challenge_ratio
 
   // Flow & topic control
   topic_strictness: 'normal', // 'loose' | 'normal' | 'strict'
-  wrap_up_on_turns: 14,
+  // Removed: wrap_up_on_turns
 
   // Safety & content
   banned_topics: [],
@@ -85,7 +83,6 @@ const sanitizeOptions = (raw) => {
   if (raw.correction_mode) out.correction_mode = pickEnum('correction_mode', raw.correction_mode);
   if (raw.difficulty) out.difficulty = pickEnum('difficulty', raw.difficulty);
   if (Array.isArray(raw.focus)) out.focus = raw.focus.filter((f) => ENUMS.focus.includes(f));
-  if (Number.isFinite(raw.min_examples_per_point)) out.min_examples_per_point = clamp(raw.min_examples_per_point, 0, 10);
 
   if (Number.isFinite(raw.max_sentence_words)) out.max_sentence_words = clamp(raw.max_sentence_words, 4, 20);
   if (Number.isFinite(raw.max_sentences_per_turn)) out.max_sentences_per_turn = clamp(raw.max_sentences_per_turn, 1, 4);
@@ -94,10 +91,8 @@ const sanitizeOptions = (raw) => {
   if (typeof raw.phonics_hints === 'boolean') out.phonics_hints = raw.phonics_hints;
 
   if (typeof raw.anti_loop === 'boolean') out.anti_loop = raw.anti_loop;
-  if (Number.isFinite(raw.reengage_after_seconds)) out.reengage_after_seconds = clamp(raw.reengage_after_seconds, 10, 180);
 
   if (raw.topic_strictness) out.topic_strictness = pickEnum('topic_strictness', raw.topic_strictness) || 'normal';
-  if (Number.isInteger(raw.wrap_up_on_turns)) out.wrap_up_on_turns = clamp(raw.wrap_up_on_turns, 5, 40);
 
   if (Array.isArray(raw.banned_topics)) out.banned_topics = raw.banned_topics.map(String).slice(0, 32);
   if (typeof raw.profanity_filter === 'boolean') out.profanity_filter = raw.profanity_filter;
@@ -189,6 +184,132 @@ ANTI-LOOP RULES:
 
 const LEVEL_INSTRUCTIONS = '';// (kept inside CORE_RULES to avoid duplication)
 
+// ————————————————————————————————————————————————————————————————————————————
+// Friends Data (copied from TopicSelection.js)
+// ————————————————————————————————————————————————————————————————————————————
+const FRIENDS = [
+  {
+    id: 'emma',
+    name: 'Emma',
+    age: 8,
+    gender: 'female',
+    icon: '👧',
+    personality: 'Creative and imaginative',
+    description: 'Emma loves to draw, paint, and create stories. She is always coming up with new ideas and loves to share her artwork with friends.',
+    interests: ['Animals', 'Colors', 'Toys', 'Food'],
+    favoriteActivity: 'Drawing animals and making up stories about them',
+    traits: ['Creative', 'Friendly', 'Imaginative', 'Artistic']
+  },
+  {
+    id: 'liam',
+    name: 'Liam',
+    age: 10,
+    gender: 'male',
+    icon: '👦',
+    personality: 'Curious and scientific',
+    description: 'Liam is fascinated by how things work. He loves experiments, asking questions, and exploring nature.',
+    interests: ['Science', 'Geography', 'Animals', 'Weather'],
+    favoriteActivity: 'Doing science experiments and exploring outdoors',
+    traits: ['Curious', 'Smart', 'Adventurous', 'Thoughtful']
+  },
+  {
+    id: 'sophia',
+    name: 'Sophia',
+    age: 7,
+    gender: 'female',
+    icon: '👧',
+    personality: 'Energetic and sporty',
+    description: 'Sophia loves to play, run, and stay active. She is always ready for a game and enjoys teaching others new sports.',
+    interests: ['Daily Activities', 'Body Parts', 'Numbers', 'School'],
+    favoriteActivity: 'Playing soccer and jumping rope',
+    traits: ['Energetic', 'Athletic', 'Confident', 'Leader']
+  },
+  {
+    id: 'noah',
+    name: 'Noah',
+    age: 9,
+    gender: 'male',
+    icon: '👦',
+    personality: 'Caring and helpful',
+    description: 'Noah is kind and always ready to help his friends. He loves taking care of pets and helping around the house.',
+    interests: ['Family', 'Animals', 'Daily Activities', 'Food'],
+    favoriteActivity: 'Taking care of his puppy and helping cook with mom',
+    traits: ['Kind', 'Helpful', 'Responsible', 'Gentle']
+  },
+  {
+    id: 'mia',
+    name: 'Mia',
+    age: 6,
+    gender: 'female',
+    icon: '👧',
+    personality: 'Musical and cheerful',
+    description: 'Mia loves singing, dancing, and making music. Her positive energy brightens everyone\'s day.',
+    interests: ['General Speaking', 'Colors', 'Toys', 'Weather'],
+    favoriteActivity: 'Singing songs and dancing to music',
+    traits: ['Cheerful', 'Musical', 'Expressive', 'Happy']
+  },
+  {
+    id: 'oliver',
+    name: 'Oliver',
+    age: 11,
+    gender: 'male',
+    icon: '👦',
+    personality: 'Smart and studious',
+    description: 'Oliver loves reading books and learning new things. He enjoys sharing interesting facts and helping classmates with homework.',
+    interests: ['History', 'Geography', 'Numbers', 'School'],
+    favoriteActivity: 'Reading adventure books and solving math puzzles',
+    traits: ['Intelligent', 'Patient', 'Organized', 'Helpful']
+  },
+  {
+    id: 'ava',
+    name: 'Ava',
+    age: 5,
+    gender: 'female',
+    icon: '👧',
+    personality: 'Sweet and shy',
+    description: 'Ava is gentle and loves quiet activities. She enjoys coloring, playing with dolls, and spending time with family.',
+    interests: ['Family', 'Colors', 'Toys', 'Clothes'],
+    favoriteActivity: 'Playing with dolls and dressing them up',
+    traits: ['Gentle', 'Sweet', 'Thoughtful', 'Careful']
+  },
+  {
+    id: 'ethan',
+    name: 'Ethan',
+    age: 8,
+    gender: 'male',
+    icon: '👦',
+    personality: 'Funny and outgoing',
+    description: 'Ethan loves making people laugh. He is great at telling jokes and making new friends wherever he goes.',
+    interests: ['General Speaking', 'School', 'Food', 'Daily Activities'],
+    favoriteActivity: 'Telling jokes and playing with friends at recess',
+    traits: ['Funny', 'Outgoing', 'Social', 'Entertaining']
+  },
+  {
+    id: 'isabella',
+    name: 'Isabella',
+    age: 9,
+    gender: 'female',
+    icon: '👧',
+    personality: 'Fashionable and confident',
+    description: 'Isabella loves fashion and expressing herself through clothes. She enjoys helping friends pick outfits and organizing her wardrobe.',
+    interests: ['Clothes', 'Colors', 'Weather', 'School'],
+    favoriteActivity: 'Designing outfits and creating fashion shows',
+    traits: ['Stylish', 'Confident', 'Creative', 'Organized']
+  },
+  {
+    id: 'lucas',
+    name: 'Lucas',
+    age: 7,
+    gender: 'male',
+    icon: '👦',
+    personality: 'Adventurous and brave',
+    description: 'Lucas loves exploring and trying new things. He is always ready for an adventure and never afraid of challenges.',
+    interests: ['Geography', 'Weather', 'Animals', 'Science'],
+    favoriteActivity: 'Exploring nature and discovering new places',
+    traits: ['Brave', 'Adventurous', 'Bold', 'Excited']
+  }
+];
+
 const TOPIC_PROMPTS = {
   'general-speaking': `TOPIC: General Speaking
 Focus: Practice everyday conversations and general speaking skills. Focus on polite expressions, greetings, and basic social interactions.`,
@@ -234,6 +355,47 @@ Focus: countries, maps, and landforms; continents and oceans; compare places.`,
   science: `TOPIC: Science
 Focus: experiments, energy, and living things; simple discoveries; how things work.`,
 };
+
+// ————————————————————————————————————————————————————————————————————————————
+// Friend-based prompts (dynamically generated based on friend personality)
+// ————————————————————————————————————————————————————————————————————————————
+const generateFriendPrompt = (friend) => {
+  const pronoun = friend.gender === 'female' ? 'She' : 'He';
+  const possessive = friend.gender === 'female' ? 'her' : 'his';
+  
+  return `FRIEND CONVERSATION MODE: Chat with ${friend.name}
+
+FRIEND PROFILE:
+- Name: ${friend.name}
+- Age: ${friend.age} years old
+- Personality: ${friend.personality}
+- About ${possessive}: ${friend.description}
+- Favorite Activity: ${friend.favoriteActivity}
+- Personality Traits: ${friend.traits.join(', ')}
+
+CONVERSATION STYLE:
+You are having a friendly conversation AS ${friend.name}, a ${friend.age}-year-old ${friend.gender === 'female' ? 'girl' : 'boy'} who is ${friend.personality.toLowerCase()}.
+- Speak naturally like a ${friend.age}-year-old would speak to a friend
+- Show enthusiasm about topics ${pronoun.toLowerCase()} loves: ${friend.interests.join(', ')}
+- Reflect ${possessive} personality traits: ${friend.traits.join(', ').toLowerCase()}
+- Share experiences and stories related to ${possessive} interests
+- Ask questions that ${friend.name} would naturally ask based on ${possessive} personality
+
+TEACHING APPROACH:
+While being ${friend.name}, you are still teaching English, but through natural peer conversation:
+- Use vocabulary related to ${friend.interests.join(', ').toLowerCase()}
+- Teach naturally by introducing new words in context of ${friend.name}'s interests
+- Correct gently, as a friendly peer would ("Oh, I think you mean...")
+- Keep the conversation fun and engaging, matching ${friend.name}'s energy level
+- Ask questions that encourage the student to practice speaking about ${friend.interests.join(', ').toLowerCase()}
+
+IMPORTANT: Stay in character as ${friend.name}. Be friendly, age-appropriate, and maintain ${possessive} personality throughout the conversation.`;
+};
+
+const FRIEND_PROMPTS = {};
+FRIENDS.forEach(friend => {
+  FRIEND_PROMPTS[`friend_${friend.id}`] = generateFriendPrompt(friend);
+});
 
 
 const FOLLOW_UP_PROMPTS = { REENGAGE: `Quick playful nudge. Keep it within 1 short sentence.` };
@@ -295,7 +457,6 @@ const buildConditionalConstraints = (opts) => {
   if (opts.banned_topics.length > 0) lines.push(`Avoid these topics entirely: ${opts.banned_topics.join(', ')}.`);
 
   lines.push(`Keep each reply ≤ ${opts.max_sentences_per_turn} sentence(s), each sentence ≤ ${opts.max_sentence_words} words.`);
-  lines.push(`Aim to wrap up around turn ${opts.wrap_up_on_turns} with a brief summary and exit task.`);
 
   return lines.join('\n');
 };
@@ -320,6 +481,13 @@ const buildAssistantPatternRotateConstraint = (chatHistory = []) => {
 // ————————————————————————————————————————————————————————————————————————————
 const buildTopicBlock = (topic) => {
   const topicId = getTopicId(topic) || 'general-speaking';
+  
+  // Check if it's a friend-based conversation (ID starts with "friend_")
+  if (topicId.startsWith('friend_')) {
+    return FRIEND_PROMPTS[topicId] || TOPIC_PROMPTS['general-speaking'];
+  }
+  
+  // Regular topic
   return TOPIC_PROMPTS[topicId] || TOPIC_PROMPTS['general-speaking'];
 };
 
@@ -346,7 +514,7 @@ const buildSystemPrompt = (opts, topic, userInfo, chatHistory, isAutoPrompt) => 
     blocks.splice(
       3,
       0,
-      `REENGAGE: The student hasn't responded for ${opts.reengage_after_seconds}s. Use 1 playful micro-game (A/B or say two words). Be positive.`
+      `REENGAGE: The student hasn't responded. Use 1 playful micro-game (A/B or say two words). Be positive.`
     );
   }
 
@@ -380,8 +548,6 @@ const pickVoiceForLevel = (level, opts) => {
 const estimateEngagementLevel = (chatHistory = [], opts) => {
   const lastAssistant = chatHistory.filter((m) => m.sender !== 'user').slice(-1)[0]?.text || '';
   const wasChallenge = /\[LEVEL:CHALLENGE\]/.test(lastAssistant);
-  const turns = chatHistory.length;
-  if (turns >= opts.wrap_up_on_turns) return ENGAGEMENT_LEVEL.WRAP_UP;
   if (wasChallenge) return ENGAGEMENT_LEVEL.CORE;
   const idleReengage = false; // gate from caller if needed
   if (idleReengage) return ENGAGEMENT_LEVEL.REENGAGE;
@@ -530,6 +696,8 @@ module.exports = {
   // Expose some pieces for testing / external orchestration
   TOPIC_PROMPTS,          // now topic-only snippets
   FOLLOW_UP_PROMPTS,
+  FRIENDS,                // Friends data
+  FRIEND_PROMPTS,         // Friend-based prompts
   getTopicId,
   replacePromptPlaceholders,
   buildUserContext,
